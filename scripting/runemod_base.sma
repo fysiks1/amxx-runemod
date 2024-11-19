@@ -196,7 +196,7 @@ public plugin_init()
 	register_clcmd("say_team","Check_Chat",0," - This command is used to drop runes")
 	
 	register_cvar("sv_runes","5")
-	register_cvar("sv_runemodsettings","bcefghkl")
+	register_cvar("sv_runemodsettings","bcfghk")
 	
 	register_concmd("amx_genrunelist","CmdGenRuneList",ADMIN_RCON," - Debug command used to clean spawn vector files")
 
@@ -709,7 +709,7 @@ public Debug_SaveRunes(id)
 	
 	new Line2Write[128]
 	
-	format(Line2Write,127,"<html> <body bgcolor=^"#000000^" text=^"#FFFFFF^"> </body>Runemod help<br>") 
+	format(Line2Write,127,"<html> <body bgcolor=^"#000000^" text=^"#FFFFFF^"> </body>List of gifts<br>") 
 	write_file(Dir,Line2Write,-1)
 	for(new i=1;i<=g_NumberOfRunes;i++)
 	{
@@ -824,13 +824,13 @@ public Check_Chat(id)
 	
 	new Text[32]
 	read_argv(1,Text,31)
-	if(equali(Text,"/runehelp") || equali(Text,"runehelp"))
+	if(equali(Text,"/godsmode") || equali(Text,"godsmode"))
 		CMD_ShowHelp(id)
-	else if(equali(Text,"playerrunes") || equali(Text,"/playerrunes"))
+	else if(equali(Text,"checkplayers") || equali(Text,"/checkplayers"))
 		Cmd_PlayerRunes(id)
-	else if(equali(Text,"runelist") || equali(Text,"/runelist"))
+	else if(equali(Text,"powers") || equali(Text,"/powers"))
 		Cmd_ShowRunes(id)
-	else if(equali(Text,"/droprune") || equali(Text,"/dropitem"))
+	else if(equali(Text,"/dropitem") || equali(Text,"dropitem"))
 	{
 		client_print(id,print_chat,"%L",LANG_PLAYER,"BaseDropItemChat")
 		CMD_DropRune(id)
@@ -845,7 +845,7 @@ public Cmd_PlayerRunes(id)
 	new Color[7]
 	new RuneIndex = 0
 	
-	len = format(Message,1599,"<html> <body bgcolor=^"#000000^" text=^"#FFFFFF^"> </body>Runes in player control:<br>")
+	len = format(Message,1599,"<html> <body bgcolor=^"#000000^" text=^"#FFFFFF^"> </body>Gifts in player control:<br>")
 	for(new b=1;b<=g_MaxPlayers;b++) 
 	{
 		if(g_UserHasRune[b])
@@ -866,8 +866,8 @@ public Cmd_PlayerRunes(id)
 				len += format(Message[len],1599 - len,"%s has <font color=^"#%s^">%s</font> (%s)<br>",Name,Color,gs_RuneName[RuneIndex],gs_RuneDesc[RuneIndex])
 		}
 	}
-	len += format(Message[len],1599 - len,"There are %d runes held by players",ActiveRunes)
-	show_motd(id,Message,"Runemod - Player Runes")
+	len += format(Message[len],1599 - len,"There are %d gifts held by players",ActiveRunes)
+	show_motd(id,Message,"Gods Mode - Player Gifts")
 }
 #else
 public Cmd_PlayerRunes(id)
@@ -887,7 +887,7 @@ public Cmd_PlayerRunes(id)
 			
 	}
 	len += format(Message[len],511 - len,"%L",LANG_PLAYER,"BaseRunesOnPlayers",ActiveRunes)
-	show_motd(id,Message,"Runemod - Player Runes")
+	show_motd(id,Message,"Gods Mode - Player gifts")
 }
 #endif
 public Cmd_ShowRunes(id)
@@ -901,13 +901,13 @@ public Cmd_ShowRunes(id)
 		else	
 			format(Url,127,"%s_en.htm",gs_MOTDUrl)
 			
-		show_motd(id,Url,"Runemod - Runelist")
+		show_motd(id,Url,"Gods Mode - Gifts list")
 	}
 	else
 	{
 		MakeMotdMessage(id)
 	
-		show_motd(id,gs_MOTDMessage,"Runemod - Runelist")
+		show_motd(id,gs_MOTDMessage,"Gods Mode - Gifts list")
 	}
 }
 public CMD_ShowHelp(id) 
@@ -916,32 +916,32 @@ public CMD_ShowHelp(id)
 	new Lang[3] 
 	get_user_info(id,"lang",Lang,2)        // Reads what langauge the user has selected this is a AMXX .2 feature (in .16 it should basicly nto get any info, so the else will come it) 
 	if(equal(Lang,"en")) 
-		show_motd(id,"http://rune.flyingmongoose.net/IngameHelp/en","Rune Mod help") 
+		show_motd(id,"https://www.indungi.ro/forum/topic/863839-gods-mode/","Gods Mode") 
 	else if(equal(Lang,"de"))
-		show_motd(id,"http://rune.flyingmongoose.net/IngameHelp/de","Rune Mod help") 
+		show_motd(id,"https://www.indungi.ro/forum/topic/863839-gods-mode/","Gods Mode") 
 	else if(equal(Lang,"nl"))
-		show_motd(id,"http://rune.flyingmongoose.net/IngameHelp/de","Rune Mod help") 		
+		show_motd(id,"https://www.indungi.ro/forum/topic/863839-gods-mode/","Gods Mode") 		
 	
 	else 
-		show_motd(id,"http://ingame.runemod.org","Rune Mod help")    // If no language has been set, it selects the english one ( Or you could make a page where the user can select the language himself 
+		show_motd(id,"https://www.indungi.ro/forum/topic/863839-gods-mode/","Gods Mode")    // If no language has been set, it selects the english one ( Or you could make a page where the user can select the language himself 
 
 #else 
 	new len,Message[512]
-	len = format(Message,511,"Runemod help:^n")
+	len = format(Message,511,"Gods Mode:^n")
 	len += format(Message[len],511 - len,"^n") 
-	len += format(Message[len],511 - len,"This page is designed to help you play Rune mod, use the menu above for navigation^n") 
+	len += format(Message[len],511 - len,"This page is designed to help you play Godsmode, use the menu above for navigation^n") 
 	len += format(Message[len],511 - len,"^n") 
 	len += format(Message[len],511 - len,"How to play:^n") 
 	len += format(Message[len],511 - len,"^n")
-	len += format(Message[len],511 - len,"Runes are randomly generated all over the level. Grab them to gain special abilities. You may only have one rune at a time. Each rune gives special powers. Some runes have powers only for certain weapons.^n") 
-	len += format(Message[len],511 - len,"To drop a rune, "bind f dropitem" at the console (~ key)^n") 
+	len += format(Message[len],511 - len,"Gifts are randomly generated all over the level. Grab them to gain special abilities. You may only have one gift at a time. Each gift gives special powers. Some gifts have powers only for certain weapons.^n") 
+	len += format(Message[len],511 - len,"To drop a gift, "bind f dropitem" at the console (~ key)^n") 
 	len += format(Message[len],511 - len,"^n") 
 	len += format(Message[len],511 - len,"COMMANDS:^n") 
-	len += format(Message[len],511 - len,"say help - you've already found this^n")
-	len += format(Message[len],511 - len,"say runelist - same as clicking the rune link^n")
-	len += format(Message[len],511 - len,"say playerrunes- see a list of all runes players have^n")
-	len += format(Message[len],511 - len,"dropitem - drop your item^n")		
-	show_motd(id,Message,"RuneMod help")
+	len += format(Message[len],511 - len,"say /godsmode - you've already found this^n")
+	len += format(Message[len],511 - len,"say /powers - same as clicking the gift link^n")
+	len += format(Message[len],511 - len,"say /checkplayers - see a list of all gifts players have^n")
+	len += format(Message[len],511 - len,"say /dropitem - drop your item^n")		
+	show_motd(id,Message,"Gods Mode")
 #endif
     return PLUGIN_HANDLED
 }
@@ -1036,7 +1036,7 @@ public Task_ShowMessage() // This is the function that shows the HUD message wit
 				if(g_RuneFlags[RuneIndex] & API_BADRUNE)
 					set_hudmessage(255, 0, 0, 0.03, 0.865, 0, 0.0, 0.0, 0.0, 4.0,HUD_CHANNEL)
 				else
-					set_hudmessage(255, 255, 255, 0.03, 0.865, 0, 0.0, 0.0, 0.0, 4.0,HUD_CHANNEL)
+					set_hudmessage(0, 250, 0, 0.03, 0.865, 0, 0.0, 0.0, 0.0, 4.0,HUD_CHANNEL)
 					
 				show_hudmessage(i,Message)
 			}
@@ -1086,7 +1086,7 @@ public Task_ShowMessage() // This is the function that shows the HUD message wit
 				if(g_RuneFlags[RuneIndex] & API_BADRUNE)
 					set_hudmessage(255, 0, 0, 0.03, 0.865, 0, 0.0, 0.0, 0.0, 4.0,HUD_CHANNEL)
 				else
-					set_hudmessage(255, 255, 255, 0.03, 0.865, 0, 0.0, 0.0, 0.0, 4.0,HUD_CHANNEL)
+					set_hudmessage(0, 250, 0, 0.03, 0.865, 0, 0.0, 0.0, 0.0, 4.0,HUD_CHANNEL)
 					
 				show_hudmessage(i,Message)
 			}
@@ -1154,7 +1154,7 @@ stock SpawnRune(RuneIndex,Origin[3])
 		entity_set_vector(EntNum, EV_VEC_rendercolor,Color)
 		
 		if(g_UseNewModel == 1)
-			entity_set_model(EntNum, "models/runemod/Runemod.mdl")
+			entity_set_model(EntNum, "models/w_present13.mdl")
 		else
 			entity_set_model(EntNum, "models/w_weaponbox.mdl")
 	}
@@ -1482,7 +1482,7 @@ stock RemoveRuneFromPlayer(id,Reason=USER_DROPEDRUNE)
 	callfunc_push_int(id)
 	callfunc_push_int(Reason)
 	callfunc_end()
-	set_hudmessage(255, 255, 255, 0.03, 0.87, 0, 0.0, 0.0, 0.0, 4.0,HUD_CHANNEL)
+	set_hudmessage(0, 250, 0, 0.03, 0.87, 0, 0.0, 0.0, 0.0, 4.0,HUD_CHANNEL)
 	show_hudmessage(id," ") // Clears the hudmessage
 	g_UserHasRune[id] = 0
 	g_UserHasRune[0]--
@@ -1539,9 +1539,9 @@ public plugin_precache()
 	g_MsgSmoke = precache_model("sprites/steam1.spr")
 	g_MsgExplode = precache_model("sprites/zerogxplode.spr")
 	
-	if(file_exists("models/runemod/Runemod.mdl"))
+	if(file_exists("models/w_present13.mdl"))
 	{
-		precache_model("models/runemod/Runemod.mdl")
+		precache_model("models/w_present13.mdl")
 		g_UseNewModel = 1
 	}
 	precache_sound("items/gunpickup1.wav")
@@ -1866,7 +1866,7 @@ stock PickupRune(id,RuneIndex,RuneEntNum)
 
 		
 		
-		set_hudmessage(255, 255, 255, 0.03, 0.865, 0, 0.0, 0.0, 0.0, 4.0,HUD_CHANNEL) 		// We now update the hudmessage on his screen
+		set_hudmessage(0, 250, 0, 0.03, 0.865, 0, 0.0, 0.0, 0.0, 4.0,HUD_CHANNEL) 		// We now update the hudmessage on his screen
 		show_hudmessage(id,Message)	
 		
 		emit_sound(id, CHAN_WEAPON, "items/gunpickup1.wav", 0.5, ATTN_NORM, 0, PITCH_NORM)
@@ -2097,7 +2097,7 @@ public CmdGenRuneList(id)
 	format(FileName,127,"%s/runelist_%s.htm",FileName,Lang)
 	if(file_exists(FileName)) delete_file(FileName)
 	
-	len = format(gs_MOTDMessage,1535,"<html> <body bgcolor=^"#000000^" text=^"#FFFFFF^"> </body>Runemod help<br>") 
+	len = format(gs_MOTDMessage,1535,"<html> <body bgcolor=^"#000000^" text=^"#FFFFFF^"> </body>Gods Mode<br>") 
 	for(new i=1;i<=g_NumberOfRunes;i++)
 	{
 		if(g_RuneFlags[i] & API_PICKUPANDFORGET)
@@ -2139,7 +2139,7 @@ stock MakeMotdMessage(id)
 	new len
 	if(g_NumberOfRunes <= 17)	// We check to make sure we are not gonna exeede the max size
 	{
-		len = format(gs_MOTDMessage,1535,"<html> <body bgcolor=^"#000000^" text=^"#FFFFFF^"> </body>Runemod help<br>") 
+		len = format(gs_MOTDMessage,1535,"<html> <body bgcolor=^"#000000^" text=^"#FFFFFF^"> </body>Gods Mode<br>") 
 		for(new i=1;i<=g_NumberOfRunes;i++)
 		{
 			if(g_RuneFlags[i] & API_PICKUPANDFORGET)
@@ -2194,7 +2194,7 @@ stock MakeMotdMessage(id)
 	else
 	{
 
-		len = format(gs_MOTDMessage,1535,"Runemod help<br>") 
+		len = format(gs_MOTDMessage,1535,"Gods Mode<br>") 
 		for(new i=1;i<=g_NumberOfRunes;i++) if(!(g_RuneFlags[i] & API_PICKUPANDFORGET))
 		{
 			if(g_RuneFlags[i] & API_PICKUPANDFORGET)
@@ -2237,7 +2237,7 @@ stock MakeMotdMessage(id)
 stock MakeMotdMessage(id)
 {
 	new len
-	len = format(gs_MOTDMessage,1535,"Runemod help^n") 
+	len = format(gs_MOTDMessage,1535,"Gods Mode ^n") 
 	for(new i=1;i<=g_NumberOfRunes;i++)
 	{
 		if(g_RuneFlags[i] & API_USELANGSYSTEM)
