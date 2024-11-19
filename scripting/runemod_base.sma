@@ -2429,7 +2429,7 @@ stock CheckDistDown(Float:Org1[3])	// This functions is used to check how far th
 	Org2[1] = Org1[1]
 	Org2[2] = -4096.0
 	
-	trace_line(1,Org1,Org2, HitOrg)
+	trace_line(-1,Org1,Org2, HitOrg)
 	if(vector_distance(Org1,HitOrg) <= MIN_DISTANCE_BETWEEN_RUNES)
 		return 1
 	return 0
