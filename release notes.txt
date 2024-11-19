@@ -1,0 +1,15 @@
+Runemod 2.2.2 released
+
+This release fixes a few minor bugs, Also changes the smoke rune from being a bad rune to a regular one
+
+
+How do i update from 2.2.1
+1) Just extract the archive over your old files
+2) Enable concrete boots rune if you want it
+
+
+Changelog:
+runemod_base.sma
+ 2.2.2
+	- Changed: You rune is no lonegr droped with option m and walking over pickupand forget rune
+	- Fixed: A few run time errors
