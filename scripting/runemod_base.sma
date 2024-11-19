@@ -326,7 +326,6 @@ public Task_DMSpawnRunes()
 		}
 		return PLUGIN_CONTINUE		
 	}
-	return PLUGIN_CONTINUE
 }
 public Event_EndRound() // When this event is called the round has ended. We now remove the runes from the world, and prepair to spawn new once. We also tell all runes that runepowers now should be disabled
 {
@@ -576,7 +575,6 @@ public Event_RoundStarted()				// We now spawn the new runes, and renable the ru
 		}
 		return PLUGIN_CONTINUE		
 	}
-	return PLUGIN_CONTINUE
 }
 /* **************************************************** End of code for start / end round ( Or DM based spawn code ) *****************************************************/
 
@@ -1946,7 +1944,6 @@ stock RandomRuneIndex(Runes2Spawn)	// This is the function used to find a random
 		}
 		return RuneIndex
 	}
-	return -1
 }
 stock is_vail_rune(RuneIndex)
 {
@@ -2043,7 +2040,6 @@ stock cs_ResetSpeed(id,weaponnum)
 		set_user_maxspeed(id,260.0)
 		return 260
 	}
-	return -1
 }
 #if HTML_MOTD == 1
 stock RGBtoHex(RGBNum)	// This function is used to change a HL RGB color into a HTML HEX color.
