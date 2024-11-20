@@ -673,14 +673,10 @@ public Task_UpdateSpawnVec()
 			}
 		}
 
-		if(g_NumberOfSpawnPoints == MAX_SPAWNPOINTS)
+		g_LastUpdatedSpawnVec = ++g_LastUpdatedSpawnVec % g_NumberOfSpawnPoints
+		if( g_LastUpdatedSpawnVec == 0 )
 		{
-			g_LastUpdatedSpawnVec = random_num(1,MAX_SPAWNPOINTS)			
-		}
-		else
-		{
-			g_LastUpdatedSpawnVec++
-			g_NumberOfSpawnPoints++
+			g_LastUpdatedSpawnVec = random_num(1,MAX_SPAWNPOINTS)
 		}
 		g_SpawnOrigin[g_LastUpdatedSpawnVec][0] = Origin[0]
 		g_SpawnOrigin[g_LastUpdatedSpawnVec][1] = Origin[1]
