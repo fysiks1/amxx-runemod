@@ -662,7 +662,7 @@ public Task_UpdateSpawnVec()
 	{
 		RandomPlayer = random_num(1,Users[0])
 		new Origin[3]
-		get_user_origin(RandomPlayer,Origin)
+		get_user_origin(Users[RandomPlayer],Origin)
 		
 		if(g_Settings & ExtraSpawnPointCheck) 	// Means we are doing extra checks on this spawnpoint
 		{
