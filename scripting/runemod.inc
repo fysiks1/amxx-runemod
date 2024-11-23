@@ -1,3 +1,6 @@
+
+#pragma reqlib "runemod"
+
 /*
 1 = TS
 2 = CSTRIKE/CZ
@@ -45,75 +48,11 @@
 #define USER_DISCONNECTED 2
 /*
 Used to register this plugin in the Runemod base plugin. 
-Returns -1 on  unkown error, but most likely API error
-returns -2 To many extra plugins registered increase MAX_PLUGINS and recompile all plugins
 When the plugin returns a positiv value, its the index of the rune
 */
 
-stock RegisterPlugin(RuneName[],RuneDesc[],RuneColor[3],Flags)
-{
-	new BasePluginIndex = FindBasePluginIndex()
-	new BasePluginRegFunc = get_func_id("API_RegisterPlugin",BasePluginIndex)
-	new OwnIndex = FindOwnPluginIndex()
-#if debug == 1	
-	if(BasePluginIndex < 0)
-	{
-		log_amx("[Runemod - %s]Error trying to find the base plugin(%d)",RuneName,BasePluginIndex)
-		return PLUGIN_HANDLED
-	}
-	if(BasePluginRegFunc < 0)
-	{
-		log_amx("[Runemod - %s] Error trying to find API_RegisterPlugin in base plugin(%d)",RuneName,BasePluginRegFunc)
-		return PLUGIN_HANDLED
-	}
-	new Temp = callfunc_begin_i(BasePluginRegFunc,BasePluginIndex)
-	if(Temp <= 0)
-	{
-		log_amx("[Runemod - %s]Error trying to call the function in runemod_base(%d) Make sure runemod_base is loaded!",RuneName,Temp)
-		return PLUGIN_HANDLED
-	}
-	if(strlen(RuneName) >=MAX_PLUGIN_RUNENAME_SIZE)
-	{
-		log_amx("Runemod Debug - %s: RegisterPlugin() tried to register a to long runename(max is %d, tried to register %d)",RuneName,MAX_PLUGIN_RUNENAME_SIZE,strlen(RuneName))
-		return PLUGIN_HANDLED
-	}
-	if(strlen(RuneDesc) >=MAX_PLUGIN_RUNEDESC_SIZE)
-	{
-		server_print("Runemod Debug %s: RegisterPlugin() tried to register a to long rune desc (max is %d, tried to register %d)",RuneName,MAX_PLUGIN_RUNEDESC_SIZE,strlen(RuneDesc))
-		return PLUGIN_HANDLED
-	}
-#else
-	new Temp = callfunc_begin_i(BasePluginRegFunc,BasePluginIndex)
-	if(Temp == -2 || !Temp)
-	{
-		if(Temp == -2)
-			log_amx("You have to many runes, and need to increase the MAX_PLUGINS define")
-		else
-			log_amx("A unkown error has happend, make sure the base plugin is loaded")
-		return PLUGIN_HANDLED		
-	}
-#endif
-	callfunc_push_int(OwnIndex)
-	callfunc_push_str(RuneName)
-	callfunc_push_str(RuneDesc)
-	callfunc_push_int(RuneColor[0])
-	callfunc_push_int(RuneColor[1])
-	callfunc_push_int(RuneColor[2])
-	callfunc_push_int(Flags)
-	
-	Temp = callfunc_end()
-	if(Temp == -1)
-	{
-		log_amx("Failed to register in the api, this plugin proberbly is using the api wrong")
-		return PLUGIN_HANDLED
-	}
-	else if(Temp == -2)
-	{
-		log_amx("Max plugins has been registered (%d) you need to change the value of MAX_PLUGINS and recompile ALL the runemod plugins",MAX_PLUGINS)
-		return PLUGIN_HANDLED
-	}
-	return Temp
-}
+native RegisterPlugin(RuneName[], RuneDesc[], RuneColor[3], Flags);
+
 stock FindBasePluginIndex()
 {
 	new num_of_plugins = get_pluginsnum()
@@ -123,21 +62,6 @@ stock FindBasePluginIndex()
 	{
 		get_plugin(i, name, 63, dummy, 1, dummy, 1, dummy, 1, dummy, 1)
  		if(equal(name,"runemod_base.amxx"))
- 			return i;
-	}
- 	return -1;
-}
-stock FindOwnPluginIndex()
-{
-	new num_of_plugins = get_pluginsnum()
-	new dummy[2];
-	new name[64];
-	new PluginName[64]
-	get_plugin(-1, PluginName,63,dummy, 1, dummy, 1, dummy, 1, dummy, 1)
-	for (new i = 0; i < num_of_plugins; ++i)
-	{
-		get_plugin(i, name, 63, dummy, 1, dummy, 1, dummy, 1, dummy, 1)
- 		if (equal(name, PluginName))
  			return i;
 	}
  	return -1;
