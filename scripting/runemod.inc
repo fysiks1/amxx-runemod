@@ -166,5 +166,14 @@ native ForceStart();
 native ForceShutDown();
 native ForceReloadOfSettings();
 
+forward API_CurWeaponChange(id, WeaponIndex);
+forward API_CurWeapon(id, WeaponIndex);
+forward API_DeathMsg(killer, victim);
+forward API_Damage(victim, attacker, OrgDmg);
+forward API_DamageDone(victim, attacker, NewDamage);
+forward API_LockSpeedChange(id);
+forward API_UnLockSpeedChange(id);
 forward API_NewRound();
 forward API_RoundStarted();
+forward API_PickUpRune(id);
+forward API_DropedRune(id, Reason);
