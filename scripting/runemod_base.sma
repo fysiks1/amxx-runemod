@@ -216,6 +216,13 @@ public plugin_init()
 #endif
 	GetSpawnVec()			// We load the spawn vectors
 }
+
+public API_ReloadSettings(iPlugin, iParams)
+{
+	plugin_cfg()
+	return 1
+}
+
 public plugin_cfg()
 {
 	g_IsRunemodDisabled = get_cvar_num("runemod_disabled")
@@ -249,6 +256,22 @@ public plugin_natives()
 {
 	register_library("runemod")
 	register_native("RegisterPlugin","API_RegisterPlugin")
+	register_native("GetUserRune","API_GetUserRune")
+	register_native("RegisterKill","API_RegisterKill")
+	register_native("ResetUserSpeed","API_ResetSpeed")
+	register_native("LockSpeed","LockSpeedChange")
+	register_native("UnLockSpeed","UnLockSpeedChange")
+	register_native("ShakeScreen","API_ShakeScreen")
+	register_native("MakeTeleport","API_EffectTeleport")
+	register_native("MakeFadeScreen","API_EffectFade")
+	register_native("MakeSmoke","API_EffectSmoke")
+	register_native("MakeExpl","API_EffectExp")
+	register_native("get_user_weaponindex","API_ActiveWeapon")
+	register_native("DisableRune","API_DisableRune")
+	register_native("ForceShutDown","API_PluginShutDown")
+	register_native("EnableRune","API_EnableRune")
+	register_native("ForceStart","API_PluginStart")
+	register_native("ForceReloadOfSettings","API_ReloadSettings")
 }
 
 /* **************************************************** Start of code for start / end round ( Or DM based spawn code ) *****************************************************/
@@ -340,11 +363,11 @@ public Event_EndRound() // When this event is called the round has ended. We now
 	{
 		if(DidStatusChange == 1)		 //This means we want to disable runemod
 		{
-			API_PluginShutDown()
+			PluginShutDown()
 		}
 		else
 		{
-			API_PluginStart()
+			PluginStart()
 			g_IsRunemodDisabled = 0
 		}
 	
@@ -1316,8 +1339,10 @@ public API_RegisterPlugin(PluginIndex, iParams) // RuneName[],RuneDesc[],RuneCol
 #endif
 	return g_NumberOfRunes
 }
-public API_DisableRune(IndexOfRune)
+public API_DisableRune(iPlugin, iParam)
 {
+	new IndexOfRune = get_param(1)
+
 	if(g_RuneDisabled[IndexOfRune] == 1)
 		return -1
 	else if(g_RuneDisabled[IndexOfRune] == 0)
@@ -1333,7 +1358,13 @@ public API_DisableRune(IndexOfRune)
 	}
 	return -2
 }
-public API_PluginShutDown()
+
+public API_PluginShutDown(iPlugin, iParams)
+{
+	return PluginShutDown()
+}
+
+public PluginShutDown()
 {
 	remove_task(64)
 	remove_task(128)
@@ -1349,15 +1380,26 @@ public API_PluginShutDown()
 	server_print("[Runemod] Runemod has been forcefully turned off")
 	client_print(0,print_chat,"[Runemod] Runemod has been forcefully turned off")
 	g_IsRunemodDisabled=1
+	return 1
 }
-public API_PluginStart()
+
+public API_PluginStart(iPlugin, iParams)
+{
+	return PluginStart()
+}
+
+public PluginStart()
 {
 	g_IsRunemodDisabled=0
 	server_print("[Runemod] Runemod has been forcefully turned on")
 	client_print(0,print_chat,"[Runemod] Runemod has been forcefully turned on")	
+	return 1
 }
-public API_EnableRune(IndexOfRune)
+
+public API_EnableRune(iPlugin, iParams)
 {
+	new IndexOfRune = get_param(1)
+
 	if(g_RuneDisabled[IndexOfRune] == 0)
 		return -1
 	else if(g_RuneDisabled[IndexOfRune] == 1)
@@ -1467,12 +1509,16 @@ public Event_Damage()
 	}
 	return PLUGIN_CONTINUE
 }
-public API_RegisterKill(killer,victim,Weapon[])
+
+public API_RegisterKill(iPlugin, iParams)
 {
+	new killer = get_param(1)
+	new victim = get_param(2)
+
 	g_KillUser[0]++
 	g_KillUser[victim] = killer	
 	
-	copy(gs_WeaponName[victim],39,Weapon)
+	get_string(3, gs_WeaponName[victim], sizeof gs_WeaponName[])
 }
 
 stock RemoveRuneFromPlayer(id,Reason=USER_DROPEDRUNE)
@@ -1488,8 +1534,10 @@ stock RemoveRuneFromPlayer(id,Reason=USER_DROPEDRUNE)
 	g_UserHasRune[id] = 0
 	g_UserHasRune[0]--
 }
-public LockSpeedChange(id) // This is used to inform other plugins about a rune has locked the movment of a player. 
+
+public LockSpeedChange(iPlugin, iParams) // This is used to inform other plugins about a rune has locked the movment of a player. 
 {
+	new id = get_param(1)
 	for(new i=1;i<=g_NumberOfRunes;i++) if(g_RuneFlags[i] & API_SPEEDCHANGE)
 	{
 		callfunc_begin_i(g_FuncIndex[i][Func_LockSpeedChange],g_PluginIndex[i])
@@ -1497,8 +1545,10 @@ public LockSpeedChange(id) // This is used to inform other plugins about a rune 
 		callfunc_end()		
 	}
 }
-public UnLockSpeedChange(id) // This is used to inform other plugins about a rune has locked the movment of a player. 
+
+public UnLockSpeedChange(iPlugin, iParams) // This is used to inform other plugins about a rune has locked the movment of a player. 
 {
+	new id = get_param(1)
 	for(new i=1;i<=g_NumberOfRunes;i++) if(g_RuneFlags[i] & API_SPEEDCHANGE)
 	{
 		callfunc_begin_i(g_FuncIndex[i][Func_UnLockSpeedChange],g_PluginIndex[i])
@@ -1506,9 +1556,11 @@ public UnLockSpeedChange(id) // This is used to inform other plugins about a run
 		callfunc_end()		
 	}
 }
-public API_ResetSpeed(id)
+
+public API_ResetSpeed(iPlugin, iParams)
 {
 #if MOD == MOD_CSTRIKE
+	new id = get_param(1)
 	return cs_ResetSpeed(id,g_CurWeapon[id])
 #endif
 }
@@ -1530,8 +1582,15 @@ stock RoundStarted() //This is called when the new round is started, we now unlo
 	}
 }
 
-public API_GetUserRune(id) return g_UserHasRune[id]
-public API_ActiveWeapon(id) return g_CurWeapon[id]
+public API_GetUserRune(iPlugin, iParams)
+{
+	return g_UserHasRune[get_param(1)]
+}
+
+public API_ActiveWeapon(iPlugin, iParams)
+{
+	return g_CurWeapon[get_param(1)]
+}
 
 
 /* ******************  Here we precache the files needed. And we Have the effects used by the runes *************************/
@@ -1549,35 +1608,43 @@ public plugin_precache()
 	precache_sound("items/weapondrop1.wav")
 }
 
-public API_EffectFade(id,Time,LastTime,type,ColorR,ColorG,ColorB,Alpha)
+public API_EffectFade(iPlugin, iParams)
 {
+	new id = get_param(1)
+	new Time = get_param(2)
+	new LastTime = get_param(3)
+	// new type = get_param(4)
+	new Color[3]; get_array(5, Color, sizeof Color)
+	new Alpha = get_param(6)
+
 	message_begin(MSG_ONE,g_MsgFade,{0,0,0},id)
 	write_short( 1<<Time ) // fade lasts this long duration
 	write_short( 1<<Time ) // fade lasts this long hold time
 	write_short( 1<<LastTime ) // fade type (in / out)
-	write_byte( ColorR ) // fade red
-	write_byte( ColorG ) // fade green
-	write_byte( ColorB ) // fade blue
+	write_byte( Color[0] ) // fade red
+	write_byte( Color[1] ) // fade green
+	write_byte( Color[2] ) // fade blue
 	write_byte( Alpha ) // fade alpha
 	message_end()
 }
-public API_EffectTeleport(origin0,origin1,origin2)
+
+public API_EffectTeleport(iPlugin, iParams)
 {
+	new origin[3]
+	get_array(1, origin, sizeof origin)
 	message_begin( MSG_BROADCAST,SVC_TEMPENTITY) 
-	write_byte( TE_TELEPORT ) 
-	write_coord( origin0 ) 
-	write_coord( origin1 ) 
-	write_coord( origin2 ) 
+	write_byte( TE_TELEPORT )
+	write_coord( origin[0] )
+	write_coord( origin[1] )
+	write_coord( origin[2] )
 	message_end()
 }
 
-public API_EffectSmoke(id,origin0,origin1,origin2)
+public API_EffectSmoke(iPlugin, iParams)
 {
-	new origin[3]
-	origin[0] = origin0
-	origin[1] = origin1
-	origin[2] = origin2
-		
+	// new id = get_param(1)
+	new origin[3]; get_array(2, origin, sizeof origin)
+	
 	message_begin( MSG_PVS, SVC_TEMPENTITY, origin )
 	write_byte( TE_SMOKE )
 	write_coord( origin[0] + random_num( -100, 100 ))
@@ -1588,12 +1655,11 @@ public API_EffectSmoke(id,origin0,origin1,origin2)
 	write_byte( 10  ) // framerate
 	message_end()
 }
-public API_EffectExp(id,origin0,origin1,origin2)
+
+public API_EffectExp(iPlugin, iParams)
 {
-	new origin[3]
-	origin[0] = origin0
-	origin[1] = origin1
-	origin[2] = origin2
+	// new id = get_param(1)
+	new origin[3]; get_array(2, origin, sizeof origin)
 
 	message_begin( MSG_PVS, SVC_TEMPENTITY, origin )
 	write_byte( TE_EXPLOSION) // This just makes a dynamic light now
@@ -1607,8 +1673,12 @@ public API_EffectExp(id,origin0,origin1,origin2)
 	message_end()
 }
 
-public API_ShakeScreen(id,amount,time)
+public API_ShakeScreen(iPlugin, iParams)
 {
+	new id = get_param(1)
+	new amount = get_param(2)
+	new time = get_param(3)
+
 	message_begin(MSG_ONE,g_MsgShake,{0,0,0},id) 
 	write_short(1<<amount) // shake amount 
 	write_short(1<<time) // shake lasts this long 
