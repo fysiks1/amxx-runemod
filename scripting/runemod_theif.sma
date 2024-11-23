@@ -45,10 +45,6 @@ public plugin_init()
 	RegisterPlugin("TheifName","TheifDisc",{53,150,240},API_EVENTDAMAGEDONE+API_ROUNDSTARTED+API_EVENTCHANGEWEAPON+API_USELANGSYSTEM)
 }
 
-public plugin_modules() 
-{ 
-	require_module("cstrike")
-}
 public API_CurWeaponChange(id,WeaponIndex)
 {
 	g_WeapEntIndex[id] = GenWeaponEntId(id,WeaponIndex)
