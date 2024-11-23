@@ -130,25 +130,12 @@ new g_FuncIndex[MAX_PLUGINS+1][12]
 #define Func_DamageDone 		4
 #define Func_LockSpeedChange 	5
 #define Func_UnLockSpeedChange 	6
-#define Func_NewRound 			7
-#define Func_RoundStarted 		8
 #define Func_PickUpRune 		9
 #define Func_DropedRune 		10
 
+new g_fwdNewRound
+new g_fwdRoundStarted
 
-/*
-[0] API_CurWeaponChange
-[2] API_CurWeapon
-[3] API_DeathMsg
-[4] API_Damage
-[5] API_DamageDone
-[6] API_LockSpeedChange
-[7] API_UnLockSpeedChange
-[8] API_NewRound
-[9] API_RoundStarted
-[10] API_PickUpRune
-[11] API_DropedRune
-*/
 new gs_RuneName[MAX_PLUGINS+1][MAX_PLUGIN_RUNENAME_SIZE+1]
 new gs_RuneDesc[MAX_PLUGINS+1][MAX_PLUGIN_RUNEDESC_SIZE+1]
 new g_RuneColor[MAX_PLUGINS+1][3]
@@ -1274,15 +1261,13 @@ public API_RegisterPlugin(PluginIndex, iParams) // RuneName[],RuneDesc[],RuneCol
 	copy(RuneName, charsmax(RuneName), gs_RuneName[g_NumberOfRunes])
 
 	// We now have to get the func indexes from the plugin, And we store them in our nice g_FuncIndex array
-	if(Flags & API_NEWROUND)
-		g_FuncIndex[g_NumberOfRunes][Func_NewRound] = get_func_id("API_NewRound",PluginIndex)
+	g_fwdNewRound = CreateMultiForward("API_NewRound", ET_IGNORE)
 	if(Flags & API_SPEEDCHANGE)
 	{
 		g_FuncIndex[g_NumberOfRunes][Func_LockSpeedChange] = get_func_id("API_LockSpeedChange",PluginIndex)	
 		g_FuncIndex[g_NumberOfRunes][Func_UnLockSpeedChange] = get_func_id("API_UnLockSpeedChange",PluginIndex)
 	}
-	if(Flags & API_ROUNDSTARTED)
-		g_FuncIndex[g_NumberOfRunes][Func_RoundStarted] = get_func_id("API_RoundStarted",PluginIndex)
+	g_fwdRoundStarted = CreateMultiForward("API_RoundStarted", ET_IGNORE)
 	if(Flags & API_EVENTDAMAGE)
 		g_FuncIndex[g_NumberOfRunes][Func_Damage] = get_func_id("API_Damage",PluginIndex)
 	if(Flags & API_EVENTDAMAGEDONE)
@@ -1567,19 +1552,11 @@ public API_ResetSpeed(iPlugin, iParams)
 
 stock StartNewRound() // This function is called by mods like CS that uses rounds and need runes to rest themself in the new round
 {
-	for(new i=1;i<=g_NumberOfRunes;i++) if(g_RuneFlags[i] & API_NEWROUND)
-	{
-		callfunc_begin_i(g_FuncIndex[i][Func_NewRound],g_PluginIndex[i])
-		callfunc_end()		
-	}
+	ExecuteForward(g_fwdNewRound)
 }
 stock RoundStarted() //This is called when the new round is started, we now unlock the runes.
 {
-	for(new i=1;i<=g_NumberOfRunes;i++) if(g_RuneFlags[i] & API_ROUNDSTARTED)
-	{
-		callfunc_begin_i(g_FuncIndex[i][Func_RoundStarted],g_PluginIndex[i])
-		callfunc_end()		
-	}
+	ExecuteForward(g_fwdRoundStarted)
 }
 
 public API_GetUserRune(iPlugin, iParams)

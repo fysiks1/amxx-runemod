@@ -165,3 +165,6 @@ native EnableRune(IndexOfRune);
 native ForceStart();
 native ForceShutDown();
 native ForceReloadOfSettings();
+
+forward API_NewRound();
+forward API_RoundStarted();
