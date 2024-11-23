@@ -67,20 +67,8 @@ stock FindBasePluginIndex()
  	return -1;
 }
 
-stock GetUserRune(id)
-{
-	callfunc_begin("API_GetUserRune","runemod_base.amxx")
-	callfunc_push_int(id)
-	return callfunc_end()
-}
-stock RegisterKill(killer,victim,Weapon[])
-{
-	callfunc_begin("API_RegisterKill","runemod_base.amxx")
-	callfunc_push_int(killer)
-	callfunc_push_int(victim)
-	callfunc_push_str(Weapon)
-	return callfunc_end()
-}
+native GetUserRune(id);
+native RegisterKill(killer,victim,Weapon[]);
 stock FakeKill(killer,victim,WeaponName[]) // FakeKill code is based from whats in the orginal runemod code
 {
 	message_begin(MSG_BROADCAST, get_user_msgid("DeathMsg"),{0,0,0},0)
@@ -91,71 +79,14 @@ stock FakeKill(killer,victim,WeaponName[]) // FakeKill code is based from whats 
 	message_end()
 	return PLUGIN_CONTINUE
 }
-stock ResetUserSpeed(id)
-{
-	callfunc_begin("API_ResetSpeed","runemod_base.amxx")
-	callfunc_push_int(id)
-	return callfunc_end()
-}
-stock LockSpeed(id)
-{	
-	callfunc_begin("LockSpeedChange","runemod_base.amxx")
-	callfunc_push_int(id)
-	callfunc_end()
-}
-stock UnLockSpeed(id)
-{	
-	callfunc_begin("UnLockSpeedChange","runemod_base.amxx")
-	callfunc_push_int(id)
-	callfunc_end()
-}
-stock ShakeScreen(id,amount,time)
-{	
-	callfunc_begin("API_ShakeScreen","runemod_base.amxx")
-	callfunc_push_int(id)
-	callfunc_push_int(amount)
-	callfunc_push_int(time)
-	callfunc_end()
-}
-stock MakeTeleport(origin[3])
-{	
-	callfunc_begin("API_EffectTeleport","runemod_base.amxx")
-	callfunc_push_int(origin[0])
-	callfunc_push_int(origin[1])
-	callfunc_push_int(origin[2])
-	callfunc_end()
-}
-stock MakeFadeScreen(id,Time,LastTime,type,Color[3],Alpha)
-{	
-	callfunc_begin("API_EffectFade","runemod_base.amxx")
-	callfunc_push_int(id)
-	callfunc_push_int(Time)
-	callfunc_push_int(LastTime)
-	callfunc_push_int(type)
-	callfunc_push_int(Color[0])
-	callfunc_push_int(Color[1])
-	callfunc_push_int(Color[2])
-	callfunc_push_int(Alpha)	
-	callfunc_end()
-}
-stock MakeSmoke(id,origin[3])
-{	
-	callfunc_begin("API_EffectSmoke","runemod_base.amxx")
-	callfunc_push_int(id)
-	callfunc_push_int(origin[0])
-	callfunc_push_int(origin[1])
-	callfunc_push_int(origin[2])
-	callfunc_end()
-}
-stock MakeExpl(id,origin[3])
-{
-	callfunc_begin("API_EffectExp","runemod_base.amxx")
-	callfunc_push_int(id)
-	callfunc_push_int(origin[0])
-	callfunc_push_int(origin[1])
-	callfunc_push_int(origin[2])
-	callfunc_end()
-}
+native ResetUserSpeed(id);
+native LockSpeed(id);
+native UnLockSpeed(id);
+native ShakeScreen(id,amount,time);
+native MakeTeleport(origin[3]);
+native MakeFadeScreen(id,Time,LastTime,type,Color[3],Alpha);
+native MakeSmoke(id,origin[3]);
+native MakeExpl(id,origin[3]);
 stock set_origin(EntNum,Origin[3])
 {
 	new Float:F_Origin[3]
@@ -206,12 +137,7 @@ stock is_weapon_sniper(WeaponIndex,mode=1)
 		return 1
 	return 0
 }
-stock get_user_weaponindex(id)
-{ 
-   	callfunc_begin("API_ActiveWeapon","runemod_base.amxx")
-	callfunc_push_int(id)
-	return callfunc_end()
-}
+native get_user_weaponindex(id);
 stock get_user_curweaponindex(id)
 { 
    new clip, ammo 
@@ -233,3 +159,9 @@ stock is_weapon_pistol(WeaponIndex)
 	return 0
 }
 #endif
+
+native DisableRune(IndexOfRune);
+native EnableRune(IndexOfRune);
+native ForceStart();
+native ForceShutDown();
+native ForceReloadOfSettings();
