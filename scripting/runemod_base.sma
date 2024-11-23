@@ -245,6 +245,12 @@ public plugin_cfg()
 	}
 }
 
+public plugin_natives()
+{
+	register_library("runemod")
+	register_native("RegisterPlugin","API_RegisterPlugin")
+}
+
 /* **************************************************** Start of code for start / end round ( Or DM based spawn code ) *****************************************************/
 #if MOD == MOD_CSTRIKE
 public Task_DMSpawnRunes()
@@ -1221,28 +1227,29 @@ public pfn_touch(ptr,ptd)
 }
 
 /********************************************** API related functions ****************************************/
-public API_RegisterPlugin(PluginIndex,RuneName[],RuneDesc[],RuneColor1,RuneColor2,RuneColor3,Flags)
+public API_RegisterPlugin(PluginIndex, iParams) // RuneName[],RuneDesc[],RuneColors[0],RuneColors[1],RunColors[2],Flags)
 {
-#if debug == 1	
-	if(!PluginIndex || !RuneName[0] || !RuneDesc[0] | !RuneColor1 && !RuneColor2 && !RuneColor3)
+	if( iParams != 4 )
 	{
-		return -1
+		log_error(25, "Incorrect number of parameters")
 	}
-	else if(g_NumberOfRunes == MAX_PLUGINS)
-#else
+
 	if(g_NumberOfRunes == MAX_PLUGINS)
-#endif
 	{
-		return -2
+		set_fail_state("Maximum Number of Runes Reached")
 	}
 	g_NumberOfRunes++
+
 	g_PluginIndex[g_NumberOfRunes] = PluginIndex
-	format(gs_RuneName[g_NumberOfRunes],MAX_PLUGIN_RUNENAME_SIZE,RuneName)
-	format(gs_RuneDesc[g_NumberOfRunes],MAX_PLUGIN_RUNEDESC_SIZE,RuneDesc)
-	g_RuneColor[g_NumberOfRunes][0] = RuneColor1
-	g_RuneColor[g_NumberOfRunes][1] = RuneColor2
-	g_RuneColor[g_NumberOfRunes][2] = RuneColor3
+	get_string(1, gs_RuneName[g_NumberOfRunes], MAX_PLUGIN_RUNENAME_SIZE)
+	get_string(2, gs_RuneDesc[g_NumberOfRunes], MAX_PLUGIN_RUNEDESC_SIZE)
+	get_array(3, g_RuneColor[g_NumberOfRunes], sizeof g_RuneColor[])
+	new Flags = get_param(4)
 	g_RuneFlags[g_NumberOfRunes] = Flags
+
+	new RuneName[MAX_PLUGIN_RUNENAME_SIZE+1]
+	copy(RuneName, charsmax(RuneName), gs_RuneName[g_NumberOfRunes])
+
 	// We now have to get the func indexes from the plugin, And we store them in our nice g_FuncIndex array
 	if(Flags & API_NEWROUND)
 		g_FuncIndex[g_NumberOfRunes][Func_NewRound] = get_func_id("API_NewRound",PluginIndex)
