@@ -74,7 +74,7 @@ Changelog
 
 #pragma dynamic 6144
 
-new const Plugin_Version[] = "2.2.2"
+new const Plugin_Version[] = "2.2.2fy1"
 
 new g_MaxPlayers
 new g_MaxEnts
