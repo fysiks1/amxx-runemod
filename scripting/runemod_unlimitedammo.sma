@@ -53,11 +53,6 @@ public plugin_init()
 	RegisterPlugin("UnlimitedAmmoName","UnlimitedAmmoDesc",{103,165,200},API_ROUNDSTARTED+API_NEWROUND+API_USELANGSYSTEM)
 }
 
-public plugin_modules() 
-{ 
-	require_module("cstrike")
-} 
-
 public Task_ShowPowerState()
 {
 	for(new i=1;i<=g_MaxPlayers;i++) if(g_HasRune[i])

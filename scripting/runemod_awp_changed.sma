@@ -24,9 +24,6 @@ Changelog:
 #include "runemod.inc"		// We need to include this file, as it contains info we need. Like #define`s and stocks
 
 new g_HasAWP[MAXPLAYERS+1]
-new g_BPluginIndex
-new g_BPDisable
-new g_BPEnable
 new g_RuneIndex
 
 new g_MaxPlayers 
@@ -42,10 +39,6 @@ public plugin_init()
 	g_MaxEnts = get_global_int(GL_maxEntities)
 	register_event("DeathMsg","Event_DeathMsg","a")
 	
-	g_BPluginIndex = FindBasePluginIndex()
-	g_BPDisable = get_func_id("API_DisableRune",g_BPluginIndex)
-	g_BPEnable = get_func_id("API_EnableRune",g_BPluginIndex)
-
 	g_RuneIndex = RegisterPlugin("AWP","models/w_awp.mdl",{50,125,10},API_PICKUPANDFORGET+API_ROUNDSTARTED)
 }
 public cmd_Drop(id)
@@ -146,16 +139,4 @@ stock IsPrimarlyWeapon(WeaponIndex)
 	WeaponIndex == CSW_G3SG1 || WeaponIndex == CSW_SG552 || WeaponIndex == CSW_AK47 || WeaponIndex == CSW_P90)
 		return 1
 	return 0
-}
-stock DisableRune(IndexOfRune)
-{
-	callfunc_begin_i(g_BPDisable,g_BPluginIndex)
-	callfunc_push_int(IndexOfRune)
-	callfunc_end()
-}
-stock EnableRune(IndexOfRune)
-{
-	callfunc_begin_i(g_BPEnable,g_BPluginIndex)
-	callfunc_push_int(IndexOfRune)
-	callfunc_end()
 }

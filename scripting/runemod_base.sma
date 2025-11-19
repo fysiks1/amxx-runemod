@@ -74,7 +74,7 @@ Changelog
 
 #pragma dynamic 6144
 
-new const Plugin_Version[] = "2.2.2"
+new const Plugin_Version[] = "2.2.2fy1"
 
 new g_MaxPlayers
 new g_MaxEnts
@@ -130,25 +130,12 @@ new g_FuncIndex[MAX_PLUGINS+1][12]
 #define Func_DamageDone 		4
 #define Func_LockSpeedChange 	5
 #define Func_UnLockSpeedChange 	6
-#define Func_NewRound 			7
-#define Func_RoundStarted 		8
 #define Func_PickUpRune 		9
 #define Func_DropedRune 		10
 
+new g_fwdNewRound
+new g_fwdRoundStarted
 
-/*
-[0] API_CurWeaponChange
-[2] API_CurWeapon
-[3] API_DeathMsg
-[4] API_Damage
-[5] API_DamageDone
-[6] API_LockSpeedChange
-[7] API_UnLockSpeedChange
-[8] API_NewRound
-[9] API_RoundStarted
-[10] API_PickUpRune
-[11] API_DropedRune
-*/
 new gs_RuneName[MAX_PLUGINS+1][MAX_PLUGIN_RUNENAME_SIZE+1]
 new gs_RuneDesc[MAX_PLUGINS+1][MAX_PLUGIN_RUNEDESC_SIZE+1]
 new g_RuneColor[MAX_PLUGINS+1][3]
@@ -216,6 +203,13 @@ public plugin_init()
 #endif
 	GetSpawnVec()			// We load the spawn vectors
 }
+
+public API_ReloadSettings(iPlugin, iParams)
+{
+	plugin_cfg()
+	return 1
+}
+
 public plugin_cfg()
 {
 	g_IsRunemodDisabled = get_cvar_num("runemod_disabled")
@@ -243,6 +237,28 @@ public plugin_cfg()
 	{
 		g_UseExternalRuneList = 1
 	}
+}
+
+public plugin_natives()
+{
+	register_library("runemod")
+	register_native("RegisterPlugin","API_RegisterPlugin")
+	register_native("GetUserRune","API_GetUserRune")
+	register_native("RegisterKill","API_RegisterKill")
+	register_native("ResetUserSpeed","API_ResetSpeed")
+	register_native("LockSpeed","LockSpeedChange")
+	register_native("UnLockSpeed","UnLockSpeedChange")
+	register_native("ShakeScreen","API_ShakeScreen")
+	register_native("MakeTeleport","API_EffectTeleport")
+	register_native("MakeFadeScreen","API_EffectFade")
+	register_native("MakeSmoke","API_EffectSmoke")
+	register_native("MakeExpl","API_EffectExp")
+	register_native("get_user_weaponindex","API_ActiveWeapon")
+	register_native("DisableRune","API_DisableRune")
+	register_native("ForceShutDown","API_PluginShutDown")
+	register_native("EnableRune","API_EnableRune")
+	register_native("ForceStart","API_PluginStart")
+	register_native("ForceReloadOfSettings","API_ReloadSettings")
 }
 
 /* **************************************************** Start of code for start / end round ( Or DM based spawn code ) *****************************************************/
@@ -334,11 +350,11 @@ public Event_EndRound() // When this event is called the round has ended. We now
 	{
 		if(DidStatusChange == 1)		 //This means we want to disable runemod
 		{
-			API_PluginShutDown()
+			PluginShutDown()
 		}
 		else
 		{
-			API_PluginStart()
+			PluginStart()
 			g_IsRunemodDisabled = 0
 		}
 	
@@ -606,16 +622,16 @@ public Event_DeathMsg()
 	ReportKill(killer,victim)
 	return PLUGIN_CONTINUE
 }
+
 stock ReportKill(killer,victim)
 {
 	for(new i=1;i<=g_NumberOfRunes;i++) if(g_RuneFlags[i] & API_DEATHMSG && ( g_UserHasRune[victim] == i || g_UserHasRune[killer] == i ))
 	{
-		callfunc_begin_i(g_FuncIndex[i][Func_DeathMsg],g_PluginIndex[i])
-		callfunc_push_int(killer)
-		callfunc_push_int(victim)		
-		callfunc_end()
+		static nullvar
+		ExecuteForward(g_FuncIndex[i][Func_DeathMsg], nullvar, killer, victim)
 	}
 }
+
 public server_frame()
 {
 	if(!g_KillUser[0]) return PLUGIN_CONTINUE
@@ -1221,52 +1237,51 @@ public pfn_touch(ptr,ptd)
 }
 
 /********************************************** API related functions ****************************************/
-public API_RegisterPlugin(PluginIndex,RuneName[],RuneDesc[],RuneColor1,RuneColor2,RuneColor3,Flags)
+public API_RegisterPlugin(PluginIndex, iParams) // RuneName[],RuneDesc[],RuneColors[0],RuneColors[1],RunColors[2],Flags)
 {
-#if debug == 1	
-	if(!PluginIndex || !RuneName[0] || !RuneDesc[0] | !RuneColor1 && !RuneColor2 && !RuneColor3)
+	if( iParams != 4 )
 	{
-		return -1
+		log_error(25, "Incorrect number of parameters")
 	}
-	else if(g_NumberOfRunes == MAX_PLUGINS)
-#else
+
 	if(g_NumberOfRunes == MAX_PLUGINS)
-#endif
 	{
-		return -2
+		set_fail_state("Maximum Number of Runes Reached")
 	}
 	g_NumberOfRunes++
+
 	g_PluginIndex[g_NumberOfRunes] = PluginIndex
-	format(gs_RuneName[g_NumberOfRunes],MAX_PLUGIN_RUNENAME_SIZE,RuneName)
-	format(gs_RuneDesc[g_NumberOfRunes],MAX_PLUGIN_RUNEDESC_SIZE,RuneDesc)
-	g_RuneColor[g_NumberOfRunes][0] = RuneColor1
-	g_RuneColor[g_NumberOfRunes][1] = RuneColor2
-	g_RuneColor[g_NumberOfRunes][2] = RuneColor3
+	get_string(1, gs_RuneName[g_NumberOfRunes], MAX_PLUGIN_RUNENAME_SIZE)
+	get_string(2, gs_RuneDesc[g_NumberOfRunes], MAX_PLUGIN_RUNEDESC_SIZE)
+	get_array(3, g_RuneColor[g_NumberOfRunes], sizeof g_RuneColor[])
+	new Flags = get_param(4)
 	g_RuneFlags[g_NumberOfRunes] = Flags
+
+	new RuneName[MAX_PLUGIN_RUNENAME_SIZE+1]
+	copy(RuneName, charsmax(RuneName), gs_RuneName[g_NumberOfRunes])
+
 	// We now have to get the func indexes from the plugin, And we store them in our nice g_FuncIndex array
-	if(Flags & API_NEWROUND)
-		g_FuncIndex[g_NumberOfRunes][Func_NewRound] = get_func_id("API_NewRound",PluginIndex)
+	g_fwdNewRound = CreateMultiForward("API_NewRound", ET_IGNORE)
 	if(Flags & API_SPEEDCHANGE)
 	{
-		g_FuncIndex[g_NumberOfRunes][Func_LockSpeedChange] = get_func_id("API_LockSpeedChange",PluginIndex)	
-		g_FuncIndex[g_NumberOfRunes][Func_UnLockSpeedChange] = get_func_id("API_UnLockSpeedChange",PluginIndex)
+		g_FuncIndex[g_NumberOfRunes][Func_LockSpeedChange] = CreateOneForward(PluginIndex, "API_LockSpeedChange", 0)
+		g_FuncIndex[g_NumberOfRunes][Func_UnLockSpeedChange] = CreateOneForward(PluginIndex, "API_UnLockSpeedChange", 0)
 	}
-	if(Flags & API_ROUNDSTARTED)
-		g_FuncIndex[g_NumberOfRunes][Func_RoundStarted] = get_func_id("API_RoundStarted",PluginIndex)
+	g_fwdRoundStarted = CreateMultiForward("API_RoundStarted", ET_IGNORE)
 	if(Flags & API_EVENTDAMAGE)
-		g_FuncIndex[g_NumberOfRunes][Func_Damage] = get_func_id("API_Damage",PluginIndex)
+		g_FuncIndex[g_NumberOfRunes][Func_Damage] = CreateOneForward(PluginIndex, "API_Damage", 0, 0, 0)
 	if(Flags & API_EVENTDAMAGEDONE)
-		g_FuncIndex[g_NumberOfRunes][Func_DamageDone] = get_func_id("API_DamageDone",PluginIndex)
+		g_FuncIndex[g_NumberOfRunes][Func_DamageDone] = CreateOneForward(PluginIndex, "API_DamageDone", 0, 0, 0)
 	if(Flags & API_EVENTCHANGEWEAPON)
-		g_FuncIndex[g_NumberOfRunes][Func_CurWeaponChange] = get_func_id("API_CurWeaponChange",PluginIndex)
+		g_FuncIndex[g_NumberOfRunes][Func_CurWeaponChange] = CreateOneForward(PluginIndex, "API_CurWeaponChange", 0, 0)
 	if(Flags & API_EVENTCURWEAPON)
-		g_FuncIndex[g_NumberOfRunes][Func_CurWeapon] = get_func_id("API_CurWeapon",PluginIndex)
+		g_FuncIndex[g_NumberOfRunes][Func_CurWeapon] = CreateOneForward(PluginIndex, "API_CurWeapon")
 	if(Flags & API_DEATHMSG)
-		g_FuncIndex[g_NumberOfRunes][Func_DeathMsg] = get_func_id("API_DeathMsg",PluginIndex)		
+		g_FuncIndex[g_NumberOfRunes][Func_DeathMsg] = CreateOneForward(PluginIndex, "API_DeathMsg", 0, 0)
 				
-	g_FuncIndex[g_NumberOfRunes][Func_PickUpRune] = get_func_id("API_PickUpRune",PluginIndex)
+	g_FuncIndex[g_NumberOfRunes][Func_PickUpRune] = CreateOneForward(PluginIndex, "API_PickUpRune", 0)
 	if(!(Flags & API_PICKUPANDFORGET))		// If the rune a singel use, they dont have a DropFunc
-		g_FuncIndex[g_NumberOfRunes][Func_DropedRune] = get_func_id("API_DropedRune",PluginIndex)
+		g_FuncIndex[g_NumberOfRunes][Func_DropedRune] = CreateOneForward(PluginIndex, "API_DropedRune", 0, 0)
 	
 	if(g_DamageHooks == 0 && ( Flags & API_EVENTDAMAGE ||  Flags & API_EVENTDAMAGEDONE  ) )
 	{
@@ -1309,8 +1324,10 @@ public API_RegisterPlugin(PluginIndex,RuneName[],RuneDesc[],RuneColor1,RuneColor
 #endif
 	return g_NumberOfRunes
 }
-public API_DisableRune(IndexOfRune)
+public API_DisableRune(iPlugin, iParam)
 {
+	new IndexOfRune = get_param(1)
+
 	if(g_RuneDisabled[IndexOfRune] == 1)
 		return -1
 	else if(g_RuneDisabled[IndexOfRune] == 0)
@@ -1326,7 +1343,13 @@ public API_DisableRune(IndexOfRune)
 	}
 	return -2
 }
-public API_PluginShutDown()
+
+public API_PluginShutDown(iPlugin, iParams)
+{
+	return PluginShutDown()
+}
+
+public PluginShutDown()
 {
 	remove_task(64)
 	remove_task(128)
@@ -1342,15 +1365,26 @@ public API_PluginShutDown()
 	server_print("[Runemod] Runemod has been forcefully turned off")
 	client_print(0,print_chat,"[Runemod] Runemod has been forcefully turned off")
 	g_IsRunemodDisabled=1
+	return 1
 }
-public API_PluginStart()
+
+public API_PluginStart(iPlugin, iParams)
+{
+	return PluginStart()
+}
+
+public PluginStart()
 {
 	g_IsRunemodDisabled=0
 	server_print("[Runemod] Runemod has been forcefully turned on")
 	client_print(0,print_chat,"[Runemod] Runemod has been forcefully turned on")	
+	return 1
 }
-public API_EnableRune(IndexOfRune)
+
+public API_EnableRune(iPlugin, iParams)
 {
+	new IndexOfRune = get_param(1)
+
 	if(g_RuneDisabled[IndexOfRune] == 0)
 		return -1
 	else if(g_RuneDisabled[IndexOfRune] == 1)
@@ -1369,19 +1403,15 @@ public Event_CurWeapon(id)
 	{
 		for(new i=1;i<=g_NumberOfRunes;i++) if(g_RuneFlags[i] & API_EVENTCHANGEWEAPON && g_UserHasRune[id] == i)
 		{
-			callfunc_begin_i(g_FuncIndex[i][Func_CurWeaponChange],g_PluginIndex[i])
-			callfunc_push_int(id)
-			callfunc_push_int(WeaponIndex)
-			callfunc_end()
+			static nullvar
+			ExecuteForward(g_FuncIndex[i][Func_CurWeaponChange], nullvar, id, WeaponIndex)
 		}
 	}
 	for(new i=1;i<=g_NumberOfRunes;i++) if(g_RuneFlags[i] & API_EVENTCURWEAPON && g_UserHasRune[id] == i)
 	{
-		callfunc_begin_i(g_FuncIndex[i][Func_CurWeapon],g_PluginIndex[i])
-		callfunc_push_int(id)
-		callfunc_push_int(WeaponIndex)
-		callfunc_end()
-	}	
+		static nullvar
+		ExecuteForward(g_FuncIndex[i][Func_CurWeapon], nullvar, id, WeaponIndex)
+	}
 	g_CurWeapon[id] = WeaponIndex
 	return PLUGIN_CONTINUE
 }
@@ -1403,11 +1433,7 @@ public Event_Damage()
 	new DmgEventsSendt = 0
 	for(new i=1;i<=g_NumberOfRunes;i++) if(g_RuneFlags[i] & API_EVENTDAMAGE && ( g_UserHasRune[victim] == i || g_UserHasRune[attacker] == i ))
 	{
-		callfunc_begin_i(g_FuncIndex[i][Func_Damage],g_PluginIndex[i])
-		callfunc_push_int(victim)
-		callfunc_push_int(attacker)
-		callfunc_push_int(OrgDmg)
-		damage[0] = callfunc_end()
+		ExecuteForward(g_FuncIndex[i][Func_Damage], damage[0], victim, attacker, OrgDmg)
 		if(damage[0] != OrgDmg)	// If the damage has changed, so we save it.
 		{
 			damage[i] = damage[0]
@@ -1451,80 +1477,82 @@ public Event_Damage()
 	{
 		if(g_RuneFlags[i] & API_EVENTDAMAGEDONE && g_UserHasRune[victim] == i || g_RuneFlags[i] & API_EVENTDAMAGEDONE && g_UserHasRune[attacker] == i )
 		{
-			callfunc_begin_i(g_FuncIndex[i][Func_DamageDone],g_PluginIndex[i])
-			callfunc_push_int(victim)
-			callfunc_push_int(attacker)
-			callfunc_push_int(NewDamage)
-			callfunc_end()
+			static nullvar
+			ExecuteForward(g_FuncIndex[i][Func_DamageDone], nullvar, victim, attacker, NewDamage)
 		}
 	}
 	return PLUGIN_CONTINUE
 }
-public API_RegisterKill(killer,victim,Weapon[])
+
+public API_RegisterKill(iPlugin, iParams)
 {
+	new killer = get_param(1)
+	new victim = get_param(2)
+
 	g_KillUser[0]++
 	g_KillUser[victim] = killer	
 	
-	copy(gs_WeaponName[victim],39,Weapon)
+	get_string(3, gs_WeaponName[victim], sizeof gs_WeaponName[])
 }
 
 stock RemoveRuneFromPlayer(id,Reason=USER_DROPEDRUNE)
 {
 	// We inform the plugin that controls the rune that he has lost his rune
 	new RuneIndex = g_UserHasRune[id]
-	callfunc_begin_i(g_FuncIndex[RuneIndex][Func_DropedRune],g_PluginIndex[RuneIndex])
-	callfunc_push_int(id)
-	callfunc_push_int(Reason)
-	callfunc_end()
+	static nullvar
+	ExecuteForward(g_FuncIndex[RuneIndex][Func_DropedRune], nullvar, id, Reason)
 	set_hudmessage(0, 250, 0, 0.03, 0.87, 0, 0.0, 0.0, 0.0, 4.0,HUD_CHANNEL)
 	show_hudmessage(id," ") // Clears the hudmessage
 	g_UserHasRune[id] = 0
 	g_UserHasRune[0]--
 }
-public LockSpeedChange(id) // This is used to inform other plugins about a rune has locked the movment of a player. 
+
+public LockSpeedChange(iPlugin, iParams) // This is used to inform other plugins about a rune has locked the movment of a player. 
 {
+	new id = get_param(1)
 	for(new i=1;i<=g_NumberOfRunes;i++) if(g_RuneFlags[i] & API_SPEEDCHANGE)
 	{
-		callfunc_begin_i(g_FuncIndex[i][Func_LockSpeedChange],g_PluginIndex[i])
-		callfunc_push_int(id)
-		callfunc_end()		
+		static nullvar
+		ExecuteForward(g_FuncIndex[i][Func_LockSpeedChange], nullvar, id)
 	}
 }
-public UnLockSpeedChange(id) // This is used to inform other plugins about a rune has locked the movment of a player. 
+
+public UnLockSpeedChange(iPlugin, iParams) // This is used to inform other plugins about a rune has locked the movment of a player. 
 {
+	new id = get_param(1)
 	for(new i=1;i<=g_NumberOfRunes;i++) if(g_RuneFlags[i] & API_SPEEDCHANGE)
 	{
-		callfunc_begin_i(g_FuncIndex[i][Func_UnLockSpeedChange],g_PluginIndex[i])
-		callfunc_push_int(id)
-		callfunc_end()		
+		static nullvar
+		ExecuteForward(g_FuncIndex[i][Func_UnLockSpeedChange], nullvar, id)
 	}
 }
-public API_ResetSpeed(id)
+
+public API_ResetSpeed(iPlugin, iParams)
 {
 #if MOD == MOD_CSTRIKE
+	new id = get_param(1)
 	return cs_ResetSpeed(id,g_CurWeapon[id])
 #endif
 }
 
 stock StartNewRound() // This function is called by mods like CS that uses rounds and need runes to rest themself in the new round
 {
-	for(new i=1;i<=g_NumberOfRunes;i++) if(g_RuneFlags[i] & API_NEWROUND)
-	{
-		callfunc_begin_i(g_FuncIndex[i][Func_NewRound],g_PluginIndex[i])
-		callfunc_end()		
-	}
+	ExecuteForward(g_fwdNewRound)
 }
 stock RoundStarted() //This is called when the new round is started, we now unlock the runes.
 {
-	for(new i=1;i<=g_NumberOfRunes;i++) if(g_RuneFlags[i] & API_ROUNDSTARTED)
-	{
-		callfunc_begin_i(g_FuncIndex[i][Func_RoundStarted],g_PluginIndex[i])
-		callfunc_end()		
-	}
+	ExecuteForward(g_fwdRoundStarted)
 }
 
-public API_GetUserRune(id) return g_UserHasRune[id]
-public API_ActiveWeapon(id) return g_CurWeapon[id]
+public API_GetUserRune(iPlugin, iParams)
+{
+	return g_UserHasRune[get_param(1)]
+}
+
+public API_ActiveWeapon(iPlugin, iParams)
+{
+	return g_CurWeapon[get_param(1)]
+}
 
 
 /* ******************  Here we precache the files needed. And we Have the effects used by the runes *************************/
@@ -1542,35 +1570,43 @@ public plugin_precache()
 	precache_sound("items/weapondrop1.wav")
 }
 
-public API_EffectFade(id,Time,LastTime,type,ColorR,ColorG,ColorB,Alpha)
+public API_EffectFade(iPlugin, iParams)
 {
+	new id = get_param(1)
+	new Time = get_param(2)
+	new LastTime = get_param(3)
+	// new type = get_param(4)
+	new Color[3]; get_array(5, Color, sizeof Color)
+	new Alpha = get_param(6)
+
 	message_begin(MSG_ONE,g_MsgFade,{0,0,0},id)
 	write_short( 1<<Time ) // fade lasts this long duration
 	write_short( 1<<Time ) // fade lasts this long hold time
 	write_short( 1<<LastTime ) // fade type (in / out)
-	write_byte( ColorR ) // fade red
-	write_byte( ColorG ) // fade green
-	write_byte( ColorB ) // fade blue
+	write_byte( Color[0] ) // fade red
+	write_byte( Color[1] ) // fade green
+	write_byte( Color[2] ) // fade blue
 	write_byte( Alpha ) // fade alpha
 	message_end()
 }
-public API_EffectTeleport(origin0,origin1,origin2)
+
+public API_EffectTeleport(iPlugin, iParams)
 {
+	new origin[3]
+	get_array(1, origin, sizeof origin)
 	message_begin( MSG_BROADCAST,SVC_TEMPENTITY) 
-	write_byte( TE_TELEPORT ) 
-	write_coord( origin0 ) 
-	write_coord( origin1 ) 
-	write_coord( origin2 ) 
+	write_byte( TE_TELEPORT )
+	write_coord( origin[0] )
+	write_coord( origin[1] )
+	write_coord( origin[2] )
 	message_end()
 }
 
-public API_EffectSmoke(id,origin0,origin1,origin2)
+public API_EffectSmoke(iPlugin, iParams)
 {
-	new origin[3]
-	origin[0] = origin0
-	origin[1] = origin1
-	origin[2] = origin2
-		
+	// new id = get_param(1)
+	new origin[3]; get_array(2, origin, sizeof origin)
+	
 	message_begin( MSG_PVS, SVC_TEMPENTITY, origin )
 	write_byte( TE_SMOKE )
 	write_coord( origin[0] + random_num( -100, 100 ))
@@ -1581,12 +1617,11 @@ public API_EffectSmoke(id,origin0,origin1,origin2)
 	write_byte( 10  ) // framerate
 	message_end()
 }
-public API_EffectExp(id,origin0,origin1,origin2)
+
+public API_EffectExp(iPlugin, iParams)
 {
-	new origin[3]
-	origin[0] = origin0
-	origin[1] = origin1
-	origin[2] = origin2
+	// new id = get_param(1)
+	new origin[3]; get_array(2, origin, sizeof origin)
 
 	message_begin( MSG_PVS, SVC_TEMPENTITY, origin )
 	write_byte( TE_EXPLOSION) // This just makes a dynamic light now
@@ -1600,8 +1635,12 @@ public API_EffectExp(id,origin0,origin1,origin2)
 	message_end()
 }
 
-public API_ShakeScreen(id,amount,time)
+public API_ShakeScreen(iPlugin, iParams)
 {
+	new id = get_param(1)
+	new amount = get_param(2)
+	new time = get_param(3)
+
 	message_begin(MSG_ONE,g_MsgShake,{0,0,0},id) 
 	write_short(1<<amount) // shake amount 
 	write_short(1<<time) // shake lasts this long 
@@ -1829,9 +1868,7 @@ stock PickupRune(id,RuneIndex,RuneEntNum)
 	new Message[MAX_PLUGIN_RUNENAME_SIZE+MAX_PLUGIN_RUNEDESC_SIZE+2]
 	new WasRunePickedUp=0
 	
-	callfunc_begin_i(g_FuncIndex[RuneIndex][Func_PickUpRune],g_PluginIndex[RuneIndex])
-	callfunc_push_int(id)
-	WasRunePickedUp = callfunc_end()	
+	ExecuteForward(g_FuncIndex[RuneIndex][Func_PickUpRune], WasRunePickedUp, id)
 	
 	if(g_RuneFlags[RuneIndex] & API_PICKUPANDFORGET)	// This means we have picked up a rune thats "API_PICKUPANDFORGET" this means you can have other runes + this one. This rune is nto realy handeled at all by the plugin. And most often is not realy a rune, but rather a minor powerup like medpack
 	{

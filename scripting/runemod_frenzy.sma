@@ -29,16 +29,6 @@ public API_DeathMsg(killer,victim)
 		DmgIncrease(killer)
 	}
 }
-stock DisableRune(IndexOfRune)
-{
-	new Temp = callfunc_begin("API_DisableRune","runemod_base.amxx")
-	if(!Temp)
-	{
-		return -1
-	}
-	callfunc_push_int(IndexOfRune)
-	return callfunc_end()
-}
 public API_Damage(victim,attacker,damage)
 {
 	if(g_HasRune[attacker])

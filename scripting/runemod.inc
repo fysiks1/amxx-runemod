@@ -1,3 +1,6 @@
+
+#pragma reqlib "runemod"
+
 /*
 1 = TS
 2 = CSTRIKE/CZ
@@ -45,75 +48,11 @@
 #define USER_DISCONNECTED 2
 /*
 Used to register this plugin in the Runemod base plugin. 
-Returns -1 on  unkown error, but most likely API error
-returns -2 To many extra plugins registered increase MAX_PLUGINS and recompile all plugins
 When the plugin returns a positiv value, its the index of the rune
 */
 
-stock RegisterPlugin(RuneName[],RuneDesc[],RuneColor[3],Flags)
-{
-	new BasePluginIndex = FindBasePluginIndex()
-	new BasePluginRegFunc = get_func_id("API_RegisterPlugin",BasePluginIndex)
-	new OwnIndex = FindOwnPluginIndex()
-#if debug == 1	
-	if(BasePluginIndex < 0)
-	{
-		log_amx("[Runemod - %s]Error trying to find the base plugin(%d)",RuneName,BasePluginIndex)
-		return PLUGIN_HANDLED
-	}
-	if(BasePluginRegFunc < 0)
-	{
-		log_amx("[Runemod - %s] Error trying to find API_RegisterPlugin in base plugin(%d)",RuneName,BasePluginRegFunc)
-		return PLUGIN_HANDLED
-	}
-	new Temp = callfunc_begin_i(BasePluginRegFunc,BasePluginIndex)
-	if(Temp <= 0)
-	{
-		log_amx("[Runemod - %s]Error trying to call the function in runemod_base(%d) Make sure runemod_base is loaded!",RuneName,Temp)
-		return PLUGIN_HANDLED
-	}
-	if(strlen(RuneName) >=MAX_PLUGIN_RUNENAME_SIZE)
-	{
-		log_amx("Runemod Debug - %s: RegisterPlugin() tried to register a to long runename(max is %d, tried to register %d)",RuneName,MAX_PLUGIN_RUNENAME_SIZE,strlen(RuneName))
-		return PLUGIN_HANDLED
-	}
-	if(strlen(RuneDesc) >=MAX_PLUGIN_RUNEDESC_SIZE)
-	{
-		server_print("Runemod Debug %s: RegisterPlugin() tried to register a to long rune desc (max is %d, tried to register %d)",RuneName,MAX_PLUGIN_RUNEDESC_SIZE,strlen(RuneDesc))
-		return PLUGIN_HANDLED
-	}
-#else
-	new Temp = callfunc_begin_i(BasePluginRegFunc,BasePluginIndex)
-	if(Temp == -2 || !Temp)
-	{
-		if(Temp == -2)
-			log_amx("You have to many runes, and need to increase the MAX_PLUGINS define")
-		else
-			log_amx("A unkown error has happend, make sure the base plugin is loaded")
-		return PLUGIN_HANDLED		
-	}
-#endif
-	callfunc_push_int(OwnIndex)
-	callfunc_push_str(RuneName)
-	callfunc_push_str(RuneDesc)
-	callfunc_push_int(RuneColor[0])
-	callfunc_push_int(RuneColor[1])
-	callfunc_push_int(RuneColor[2])
-	callfunc_push_int(Flags)
-	
-	Temp = callfunc_end()
-	if(Temp == -1)
-	{
-		log_amx("Failed to register in the api, this plugin proberbly is using the api wrong")
-		return PLUGIN_HANDLED
-	}
-	else if(Temp == -2)
-	{
-		log_amx("Max plugins has been registered (%d) you need to change the value of MAX_PLUGINS and recompile ALL the runemod plugins",MAX_PLUGINS)
-		return PLUGIN_HANDLED
-	}
-	return Temp
-}
+native RegisterPlugin(RuneName[], RuneDesc[], RuneColor[3], Flags);
+
 stock FindBasePluginIndex()
 {
 	new num_of_plugins = get_pluginsnum()
@@ -127,36 +66,9 @@ stock FindBasePluginIndex()
 	}
  	return -1;
 }
-stock FindOwnPluginIndex()
-{
-	new num_of_plugins = get_pluginsnum()
-	new dummy[2];
-	new name[64];
-	new PluginName[64]
-	get_plugin(-1, PluginName,63,dummy, 1, dummy, 1, dummy, 1, dummy, 1)
-	for (new i = 0; i < num_of_plugins; ++i)
-	{
-		get_plugin(i, name, 63, dummy, 1, dummy, 1, dummy, 1, dummy, 1)
- 		if (equal(name, PluginName))
- 			return i;
-	}
- 	return -1;
-}
 
-stock GetUserRune(id)
-{
-	callfunc_begin("API_GetUserRune","runemod_base.amxx")
-	callfunc_push_int(id)
-	return callfunc_end()
-}
-stock RegisterKill(killer,victim,Weapon[])
-{
-	callfunc_begin("API_RegisterKill","runemod_base.amxx")
-	callfunc_push_int(killer)
-	callfunc_push_int(victim)
-	callfunc_push_str(Weapon)
-	return callfunc_end()
-}
+native GetUserRune(id);
+native RegisterKill(killer,victim,Weapon[]);
 stock FakeKill(killer,victim,WeaponName[]) // FakeKill code is based from whats in the orginal runemod code
 {
 	message_begin(MSG_BROADCAST, get_user_msgid("DeathMsg"),{0,0,0},0)
@@ -167,71 +79,14 @@ stock FakeKill(killer,victim,WeaponName[]) // FakeKill code is based from whats 
 	message_end()
 	return PLUGIN_CONTINUE
 }
-stock ResetUserSpeed(id)
-{
-	callfunc_begin("API_ResetSpeed","runemod_base.amxx")
-	callfunc_push_int(id)
-	return callfunc_end()
-}
-stock LockSpeed(id)
-{	
-	callfunc_begin("LockSpeedChange","runemod_base.amxx")
-	callfunc_push_int(id)
-	callfunc_end()
-}
-stock UnLockSpeed(id)
-{	
-	callfunc_begin("UnLockSpeedChange","runemod_base.amxx")
-	callfunc_push_int(id)
-	callfunc_end()
-}
-stock ShakeScreen(id,amount,time)
-{	
-	callfunc_begin("API_ShakeScreen","runemod_base.amxx")
-	callfunc_push_int(id)
-	callfunc_push_int(amount)
-	callfunc_push_int(time)
-	callfunc_end()
-}
-stock MakeTeleport(origin[3])
-{	
-	callfunc_begin("API_EffectTeleport","runemod_base.amxx")
-	callfunc_push_int(origin[0])
-	callfunc_push_int(origin[1])
-	callfunc_push_int(origin[2])
-	callfunc_end()
-}
-stock MakeFadeScreen(id,Time,LastTime,type,Color[3],Alpha)
-{	
-	callfunc_begin("API_EffectFade","runemod_base.amxx")
-	callfunc_push_int(id)
-	callfunc_push_int(Time)
-	callfunc_push_int(LastTime)
-	callfunc_push_int(type)
-	callfunc_push_int(Color[0])
-	callfunc_push_int(Color[1])
-	callfunc_push_int(Color[2])
-	callfunc_push_int(Alpha)	
-	callfunc_end()
-}
-stock MakeSmoke(id,origin[3])
-{	
-	callfunc_begin("API_EffectSmoke","runemod_base.amxx")
-	callfunc_push_int(id)
-	callfunc_push_int(origin[0])
-	callfunc_push_int(origin[1])
-	callfunc_push_int(origin[2])
-	callfunc_end()
-}
-stock MakeExpl(id,origin[3])
-{
-	callfunc_begin("API_EffectExp","runemod_base.amxx")
-	callfunc_push_int(id)
-	callfunc_push_int(origin[0])
-	callfunc_push_int(origin[1])
-	callfunc_push_int(origin[2])
-	callfunc_end()
-}
+native ResetUserSpeed(id);
+native LockSpeed(id);
+native UnLockSpeed(id);
+native ShakeScreen(id,amount,time);
+native MakeTeleport(origin[3]);
+native MakeFadeScreen(id,Time,LastTime,type,Color[3],Alpha);
+native MakeSmoke(id,origin[3]);
+native MakeExpl(id,origin[3]);
 stock set_origin(EntNum,Origin[3])
 {
 	new Float:F_Origin[3]
@@ -282,12 +137,7 @@ stock is_weapon_sniper(WeaponIndex,mode=1)
 		return 1
 	return 0
 }
-stock get_user_weaponindex(id)
-{ 
-   	callfunc_begin("API_ActiveWeapon","runemod_base.amxx")
-	callfunc_push_int(id)
-	return callfunc_end()
-}
+native get_user_weaponindex(id);
 stock get_user_curweaponindex(id)
 { 
    new clip, ammo 
@@ -309,3 +159,21 @@ stock is_weapon_pistol(WeaponIndex)
 	return 0
 }
 #endif
+
+native DisableRune(IndexOfRune);
+native EnableRune(IndexOfRune);
+native ForceStart();
+native ForceShutDown();
+native ForceReloadOfSettings();
+
+forward API_CurWeaponChange(id, WeaponIndex);
+forward API_CurWeapon(id, WeaponIndex);
+forward API_DeathMsg(killer, victim);
+forward API_Damage(victim, attacker, OrgDmg);
+forward API_DamageDone(victim, attacker, NewDamage);
+forward API_LockSpeedChange(id);
+forward API_UnLockSpeedChange(id);
+forward API_NewRound();
+forward API_RoundStarted();
+forward API_PickUpRune(id);
+forward API_DropedRune(id, Reason);
